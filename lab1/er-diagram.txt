@@ -12,8 +12,8 @@ erDiagram
     }
 
     TRAINER_CAR {
-        BIGINT trainer_id PK
-        BIGINT car_id PK
+        BIGINT trainer_id PK FK
+        BIGINT car_id PK FK
     }
 
     TRAINER {

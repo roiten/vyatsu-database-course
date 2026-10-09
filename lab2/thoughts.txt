@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS car (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    photo_url VARCHAR(255),
+    description TEXT,
+    horsepower INT NOT NULL CHECK (horsepower > 0),
+    production_year INT NOT NULL CHECK (production_year > 1900),
+    color VARCHAR(20) NOT NULL,
+    suspension_name VARCHAR(100) NOT NULL,
+    is_utilized BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+
+

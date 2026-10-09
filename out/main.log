@@ -1,6 +1,7 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.10.8)  9 OCT 2026 07:43
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.10.8)  8 OCT 2026 23:19
 entering extended mode
  restricted \write18 enabled.
+ file:line:error style messages enabled.
  %&-line parsing enabled.
 **main.tex
 (./main.tex
@@ -904,32 +905,33 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
-) (./main.aux
+)
+(C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/main.aux
 Package babel Info: 'russian' activates 'russian' shorthands.
-(babel)             Reported on input line 8.
+(babel)             Reported on input line 9.
 )
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 47.
+LaTeX Font Info:    ... okay on input line 47.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -965,7 +967,7 @@ LaTeX Font Info:    ... okay on input line 39.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-LaTeX Info: Redefining \th on input line 39.
+LaTeX Info: Redefining \th on input line 47.
 (c:/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count384
@@ -993,29 +995,32 @@ Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: listings package is loaded.
 Package caption Info: End \AtBeginDocument code.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 39.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 47.
 
 
 (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 39.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 47.
 
 
 (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-Package xypdf Info: Line width: 0.57597pt on input line 39.
-Package hyperref Info: Link coloring OFF on input line 39.
- (./main.out)
-(./main.out)
+Package xypdf Info: Line width: 0.57597pt on input line 47.
+Package hyperref Info: Link coloring OFF on input line 47.
+
+(C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/main.out
+)
+(C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/main.out
+)
 \@outlinefile=\write5
 \openout5 = `main.out'.
 
 \c@lstlisting=\count390
 Package babel Info: Main language set to 'russian'.
 
-Overfull \hbox (7.34505pt too wide) in paragraph at lines 62--73
+Overfull \hbox (7.34505pt too wide) in paragraph at lines 70--81
 [] 
  []
 
@@ -1023,26 +1028,26 @@ Overfull \hbox (7.34505pt too wide) in paragraph at lines 62--73
 
 {c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/
 texmf-dist/fonts/enc/dvips/cm-super/cm-super-t2a.enc}]
-Underfull \hbox (badness 10000) in paragraph at lines 100--101
+Underfull \hbox (badness 10000) in paragraph at lines 108--109
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 103--104
+Underfull \hbox (badness 10000) in paragraph at lines 111--112
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 105--106
+Underfull \hbox (badness 10000) in paragraph at lines 113--114
 
  []
 
 [2{c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 [3]
-<images/diagram-flowchart.png, id=47, 1405.25pt x 1807.75375pt>
-File: images/diagram-flowchart.png Graphic file (type png)
-<use images/diagram-flowchart.png>
-Package pdftex.def Info: images/diagram-flowchart.png  used on input line 139.
+<images/er.png, id=47, 1405.25pt x 1807.75375pt>
+File: images/er.png Graphic file (type png)
+<use images/er.png>
+Package pdftex.def Info: images/er.png  used on input line 147.
 (pdftex.def)             Requested size: 411.14528pt x 528.89688pt.
 
 
@@ -1052,27 +1057,30 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 <images/create_db.png, id=53, 478.03593pt x 306.39468pt>
 File: images/create_db.png Graphic file (type png)
 <use images/create_db.png>
-Package pdftex.def Info: images/create_db.png  used on input line 152.
+Package pdftex.def Info: images/create_db.png  used on input line 160.
 (pdftex.def)             Requested size: 411.14528pt x 263.52234pt.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-[5 <./images/diagram-flowchart.png>] [6 <./images/create_db.png>]
+[5 <./images/er.png>] [6 <./images/create_db.png>]
 \pydata@fh@0=\write6
 \openout6 = `_FAD58DE7366495DB4650CFEFAC2FCD61.data.minted'.
 
-runsystem(latexminted config  --timestamp 20261009074336 FAD58DE7366495DB4650CF
+runsystem(latexminted config  --timestamp 20261008231924 FAD58DE7366495DB4650CF
 EFAC2FCD61)...executed safely (allowed).
 
 
-(./_FAD58DE7366495DB4650CFEFAC2FCD61.config.minted)
-runsystem(latexminted cleanconfig  --timestamp 20261009074336 FAD58DE7366495DB4
+(C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/_FAD58DE
+7366495DB4650CFEFAC2FCD61.config.minted)
+runsystem(latexminted cleanconfig  --timestamp 20261008231924 FAD58DE7366495DB4
 650CFEFAC2FCD61)...executed safely (allowed).
 
 
-(./_minted/rainbow_dash.style.minted)
-(./_minted/48EFF976E8CA4BFD5807A8342A5206B4.highlight.minted
+(c:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/_minted/
+rainbow_dash.style.minted)
+(c:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/_minted/
+48EFF976E8CA4BFD5807A8342A5206B4.highlight.minted
 LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 
 1.
 
@@ -1082,12 +1090,8 @@ File: t2acmtt.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
 LaTeX Font Info:    Font shape `T2A/cmtt/bx/n' in size <12> not available
 (Font)              Font shape `T2A/cmtt/m/n' tried instead on input line 3.
  [7]) [8]
-\openout6 = `_FAD58DE7366495DB4650CFEFAC2FCD61.data.minted'.
-
-runsystem(latexminted clean  --timestamp 20261009074336 FAD58DE7366495DB4650CFE
-FAC2FCD61)...executed safely (allowed).
-
- (./main.aux)
+(C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-course/out/main.aux
+)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-09-09>
@@ -1096,18 +1100,19 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 75A900CABA320632F247A72EF72C0A07;694.
  ) 
 Here is how much of TeX's memory you used:
- 23978 strings out of 467050
- 434830 string characters out of 5410550
- 1117250 words of memory out of 5000000
+ 23980 strings out of 467050
+ 436679 string characters out of 5410550
+ 1117314 words of memory out of 5000000
  52994 multiletter control sequences out of 15000+600000
  636221 words of font info for 67 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 88i,6n,91p,3248b,1022s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 88i,6n,91p,3308b,1022s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb><c:/texl
 ive/2026/texmf-dist/fonts/type1/public/cm-super/sfit1200.pfb><c:/texlive/2026/t
 exmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><c:/texlive/2026/texmf-dist/
 fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on main.pdf (8 pages, 234336 bytes).
+Output written on C:/Users/roiten/Documents/vyatsu_institute/vyatsu-database-co
+urse/out/main.pdf (8 pages, 234833 bytes).
 PDF statistics:
  110 PDF objects out of 1000 (max. 8388607)
  85 compressed objects within 1 object stream

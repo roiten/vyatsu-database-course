@@ -11,4 +11,8 @@ CREATE TABLE IF NOT EXISTS car (
 );
 
 
+заполнять - ок
+изменять - ок
+удалять - ок
+
 

@@ -63,3 +63,10 @@ CREATE TABLE IF NOT EXISTS achievement (
 
 -- Индекс для поиска достижений по id тренера
 CREATE INDEX ON achievement(trainer_id);
+
+
+-- TRUNCATE trainer_car CASCADE;
+-- TRUNCATE trainer CASCADE;
+-- TRUNCATE car CASCADE;
+-- TRUNCATE competition CASCADE;
+-- TRUNCATE achievement CASCADE;

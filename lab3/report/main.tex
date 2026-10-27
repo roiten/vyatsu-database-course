@@ -1,0 +1,1085 @@
+\documentclass[oneside,a4paper,14pt]{extarticle}
+
+\usepackage[T2A]{fontenc}
+\usepackage[top=20mm,bottom=20mm,left=30mm,right=10mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{mwe}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage[all]{xy}
+\usepackage[breaklinks,hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{minted,fancyvrb}
+\usepackage{float}
+\usepackage{array}
+\usepackage{url}
+\captionsetup{labelsep=endash,justification=centering}
+
+\setminted{style=rainbow_dash,fontsize=\small}
+
+\titleformat{\section}
+{\normalsize\bfseries}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalsize\bfseries}
+{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+{\normalsize\bfseries}
+{\thesubsubsection}{1em}{}
+
+\renewcommand\baselinestretch{1.33}\normalsize
+\setlength{\parindent}{1.25cm}
+\setlength{\emergencystretch}{3em}
+
+\begin{document}
+\newpage\thispagestyle{empty}
+
+\begin{center}
+МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ\\
+РОССИЙСКОЙ ФЕДЕРАЦИИ\\
+ФЕДЕРАЛЬНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ\\
+ОБРАЗОВАТЕЛЬНОЕ УЧРЕЖДЕНИЕ ВЫСШЕГО ОБРАЗОВАНИЯ\\
+«ВЯТСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ»\\
+Институт математики и информационных систем\\
+Факультет автоматики и вычислительной техники\\
+Кафедра электронных вычислительных машин
+\end{center}
+
+\vspace{30mm}
+
+\begin{center}
+Отчёт по лабораторной работе № 2.2\\
+по дисциплине\\
+«Управление данными»\\
+«Основы DML-запросов в PostgreSQL»
+\end{center}
+
+\vspace{40mm}
+
+\noindent
+\begin{tabular}{l r}
+Выполнил студент гр. ИВТб-2303-06-00 \hspace{3mm}\rule[-1mm]{20mm}{0.15mm} /Перевозчиков Д.А./ \\
+
+Проверил \hspace{57mm}\rule[-1mm]{20mm}{0.15mm} /Клюкин В. Л./
+\end{tabular}
+
+\vfill
+\begin{center}
+Киров\\
+2026
+\end{center}
+
+
+\newpage\thispagestyle{empty}
+
+\section{Цели лабораторной работы}
+
+\begin{itemize}
+    \item научиться использовать агрегатные функции;
+    \item научиться использовать операторы и встроенные функции, работать с датами;
+    \item научиться использовать подзапросы и предложения \texttt{WITH}, \texttt{RETURNING};
+    \item рассмотреть и выполнить различные планы выполнения запросов;
+    \item выполнить \texttt{FORMAT JSON} для выборки из нескольких связанных таблиц;
+    \item выполнить три способа соединения для одной и той же выборки и определить наиболее оптимальный.
+\end{itemize}
+
+\section{Задание}
+
+Выполнить все примеры из методических указаний для своей предметной области, используя данные и знания, полученные в предыдущих лабораторных работах. В качестве предметной области используется база данных гоночного автоклуба, созданная в лабораторной работе № 1 и заполненная данными в лабораторной работе № 2.1. База данных содержит таблицы \texttt{car}, \texttt{trainer}, \texttt{trainer\_car}, \texttt{competition} и \texttt{achievement}.
+
+\newpage
+\section{Решение}
+
+\subsection{Агрегатные функции и предложение HAVING}
+
+Агрегатные функции вычисляют одно значение по множеству входных строк. Для получения результата отдельно по каждой группе строк используется предложение \texttt{GROUP BY}. Условия, в которых участвует результат агрегатной функции, записываются в предложении \texttt{HAVING}, а не в \texttt{WHERE}: \texttt{WHERE} фильтрует отдельные строки до группировки, а \texttt{HAVING} --- уже сформированные группы.
+
+\textbf{Запрос 1.} Подсчёт количества автомобилей в автопарке с помощью \texttt{COUNT(*)}.
+
+\begin{minted}[breaklines]{sql}
+SELECT COUNT(*) AS total_cars
+FROM car;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 1}\label{tab:agg1}
+\begin{tabular}{|l|}
+\hline
+\textbf{total\_\allowbreak cars} \\ \hline
+12 \\ \hline
+\end{tabular}
+\end{table}
+
+В автопарке числится 12 автомобилей, включая автомобили, отправленные в утилизацию.
+
+
+\textbf{Запрос 2.} Вычисление среднего, минимального, максимального и суммарного значений мощности для автомобилей, не находящихся в утилизации.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    AVG(horsepower) AS average_horsepower,
+    MIN(horsepower) AS min_horsepower,
+    MAX(horsepower) AS max_horsepower,
+    SUM(horsepower) AS total_horsepower
+FROM car
+WHERE is_utilized = FALSE;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 2}\label{tab:agg2}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{average\_\allowbreak horsepower} & \textbf{min\_\allowbreak horsepower} & \textbf{max\_\allowbreak horsepower} & \textbf{total\_\allowbreak horsepower} \\ \hline
+258.8181818181818182 & 76 & 510 & 2847 \\ \hline
+\end{tabular}
+\end{table}
+
+Средняя мощность рабочих автомобилей составляет около 258,8 л.с., минимальная --- 76 л.с., максимальная --- 510 л.с.
+
+
+\textbf{Запрос 3.} Группировка автомобилей по цвету. Для каждого цвета определяется количество автомобилей и их средняя мощность, результат сортируется по убыванию количества.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    color,
+    COUNT(*) AS car_count,
+    AVG(horsepower) AS average_horsepower
+FROM car
+WHERE is_utilized = FALSE
+GROUP BY color
+ORDER BY car_count DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 3}\label{tab:agg3}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{color} & \textbf{car\_\allowbreak count} & \textbf{average\_\allowbreak horsepower} \\ \hline
+Красный & 3 & 164 \\ \hline
+Оранжевый & 2 & 265 \\ \hline
+Белый & 2 & 135 \\ \hline
+Синий & 2 & 297.5 \\ \hline
+Серый & 1 & 510 \\ \hline
+Чёрный & 1 & 450 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 4.} Группировка автомобилей по тренерам. Функция \texttt{COUNT} считает количество автомобилей у тренера, а \texttt{STRING\_AGG} собирает их названия в одну строку через запятую. Используется \texttt{LEFT JOIN}, чтобы в результат попадали и тренеры без специализаций.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    t.id,
+    t.last_name,
+    t.first_name,
+    COUNT(tc.car_id) AS car_count,
+    STRING_AGG(c.title, ', ') AS cars
+FROM trainer t
+LEFT JOIN trainer_car tc ON tc.trainer_id = t.id
+LEFT JOIN car c ON c.id = tc.car_id
+GROUP BY t.id, t.last_name, t.first_name
+ORDER BY car_count DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\caption{Результат запроса 4}\label{tab:agg4}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{8mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{22mm}|>{\raggedright\arraybackslash}p{80mm}|}
+\hline
+\textbf{id} & \textbf{last\_\allowbreak name} & \textbf{first\_\allowbreak name} & \textbf{car\_\allowbreak count} & \textbf{cars} \\ \hline
+4 & Иванов & Иван & 2 & ВАЗ 2107, Mitsubishi Lancer Evolution \\ \hline
+6 & Иванова & Мария & 2 & Audi RS2, Audi Quattro \\ \hline
+2 & Пехота & Наталья & 2 & Audi Quattro, BMW M3 \\ \hline
+9 & Петров & Дмитрий & 2 & ВАЗ 2107, BMW M3 \\ \hline
+3 & Моралес & Даниэль & 2 & Peugeot 406, ОКА \\ \hline
+1 & Торрето & Доминик & 2 & Mazda MX-5 Miata, Toyota Supra \\ \hline
+5 & Смирнов & Алексей & 2 & Toyota Supra, Porsche 911 \\ \hline
+8 & Соколова & Анна & 2 & Mazda MX-5 Miata, Porsche 911 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 5.} Поиск тренеров, которые работают с тремя и более автомобилями. Условие на количество записано в предложении \texttt{HAVING}, так как оно относится к результату агрегатной функции.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    t.id,
+    t.last_name,
+    t.first_name,
+    COUNT(tc.car_id) AS car_count
+FROM trainer t
+JOIN trainer_car tc ON tc.trainer_id = t.id
+JOIN car c ON c.id = tc.car_id
+WHERE c.is_utilized = FALSE
+GROUP BY t.id, t.last_name, t.first_name
+HAVING COUNT(tc.car_id) > 2
+ORDER BY car_count DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 5}\label{tab:agg5}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{last\_\allowbreak name} & \textbf{first\_\allowbreak name} & \textbf{car\_\allowbreak count} \\ \hline
+1 & Торрето & Доминик & 3 \\ \hline
+\end{tabular}
+\end{table}
+
+Условию удовлетворяет один тренер --- Торрето Доминик, который работает с тремя автомобилями.
+
+
+\subsection{Операторы, встроенные функции и работа с датами}
+
+\textbf{Запрос 6.} Проверка попадания значения в промежуток с помощью оператора \texttt{BETWEEN}: выбираются автомобили мощностью от 400 до 700 л.с., не находящиеся в утилизации.
+
+\begin{minted}[breaklines]{sql}
+SELECT *
+FROM car
+WHERE horsepower BETWEEN 400 AND 700
+  AND is_utilized = FALSE;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\caption{Результат запроса 6}\label{tab:infun1}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{21mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{14mm}|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{photo\_\allowbreak url} & \textbf{description} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} & \textbf{suspension\_\allowbreak name} & \textbf{is\_\allowbreak utilized} \\ \hline
+7 & BMW M3 & \url{https://cars.pics/bmw_m3.jpg} & Рядная шестёрка, задний привод. Седан, а едет как спорткар. & 510 & 2021 & Серый & Adaptive M Suspension & false \\ \hline
+10 & Porsche 911 & \url{https://cars.pics/porsche_911.jpg} & Оппозитник сзади. Уже 60 лет не меняют форму кузова. Могут, а зачем?. & 450 & 2022 & Чёрный & Sport Suspension & false \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 7.} Поиск по шаблону с помощью оператора \texttt{LIKE}. Символ \texttt{\%} в шаблоне заменяет любое количество символов, поэтому выбираются все автомобили, название которых начинается с «Audi».
+
+\begin{minted}[breaklines]{sql}
+SELECT *
+FROM car
+WHERE title LIKE 'Audi%';
+\end{minted}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\caption{Результат запроса 7}\label{tab:infun2}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{21mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{14mm}|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{photo\_\allowbreak url} & \textbf{description} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} & \textbf{suspension\_\allowbreak name} & \textbf{is\_\allowbreak utilized} \\ \hline
+11 & Audi RS2 & \url{https://cars.pics/audi_rs2.jpg} & Универсал, который доводили сами инженеры из Porsche. Первый RS от Audi. & 315 & 1994 & Синий & Sport Suspension & false \\ \hline
+8 & Audi Quattro & \url{https://cars.pics/audi_quattro.jpg} & Полный привод и турбонадув. Машина, с которой началась эпоха quattro в ралли. & 200 & 1984 & Оранжевый & MacPherson Strut & false \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 8.} Формирование полного имени тренера функцией \texttt{CONCAT}. Функция \texttt{COALESCE} возвращает первый аргумент, отличный от \texttt{NULL}, поэтому отсутствующее отчество заменяется пустой строкой. В отличие от оператора \texttt{||}, функция \texttt{CONCAT} воспринимает \texttt{NULL} как пустую строку, и имя не превращается в \texttt{NULL}.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    id,
+    CONCAT(last_name, ' ', first_name, ' ',
+           COALESCE(middle_name, '')) AS full_name
+FROM trainer
+ORDER BY id;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 8}\label{tab:infun3}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{id} & \textbf{full\_\allowbreak name} \\ \hline
+1 & Торрето Доминик \\ \hline
+2 & Пехота Наталья Морская \\ \hline
+3 & Моралес Даниэль \\ \hline
+4 & Иванов Иван \\ \hline
+5 & Смирнов Алексей \\ \hline
+6 & Иванова Мария \\ \hline
+8 & Соколова Анна \\ \hline
+9 & Петров Дмитрий \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 9.} Конструкция \texttt{CASE} используется для классификации автомобилей по мощности на три категории.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    title,
+    horsepower,
+    CASE
+        WHEN horsepower < 300 THEN 'Низкая мощность'
+        WHEN horsepower BETWEEN 300 AND 600 THEN 'Средняя мощность'
+        ELSE 'Высокая мощность'
+    END AS power_category
+FROM car
+WHERE is_utilized = FALSE
+ORDER BY horsepower DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 9}\label{tab:infun4}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{title} & \textbf{horsepower} & \textbf{power\_\allowbreak category} \\ \hline
+BMW M3 & 510 & Средняя мощность \\ \hline
+Porsche 911 & 450 & Средняя мощность \\ \hline
+Toyota Supra & 330 & Средняя мощность \\ \hline
+Audi RS2 & 315 & Средняя мощность \\ \hline
+Nissan Skyline GT-R & 280 & Низкая мощность \\ \hline
+Mazda MX-5 Miata & 201 & Низкая мощность \\ \hline
+Audi Quattro & 200 & Низкая мощность \\ \hline
+Peugeot 406 & 194 & Низкая мощность \\ \hline
+Mitsubishi Lancer Evolution & 180 & Низкая мощность \\ \hline
+Volkswagen Beetle & 111 & Низкая мощность \\ \hline
+ВАЗ 2107 & 76 & Низкая мощность \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 10.} Вычисление примерного возраста тренеров. Функция \texttt{EXTRACT} получает год из текущей даты, результат приводится к целому типу оператором \texttt{::INT}, после чего из него вычитается год рождения.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    id,
+    last_name,
+    first_name,
+    birth_year,
+    EXTRACT(YEAR FROM CURRENT_DATE)::INT - birth_year AS approximate_age
+FROM trainer
+ORDER BY birth_year;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 10}\label{tab:infun5}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{last\_\allowbreak name} & \textbf{first\_\allowbreak name} & \textbf{birth\_\allowbreak year} & \textbf{approximate\_\allowbreak age} \\ \hline
+1 & Торрето & Доминик & 1967 & 59 \\ \hline
+3 & Моралес & Даниэль & 1973 & 53 \\ \hline
+9 & Петров & Дмитрий & 1979 & 47 \\ \hline
+4 & Иванов & Иван & 1985 & 41 \\ \hline
+2 & Пехота & Наталья & 1988 & 38 \\ \hline
+6 & Иванова & Мария & 1990 & 36 \\ \hline
+5 & Смирнов & Алексей & 1992 & 34 \\ \hline
+8 & Соколова & Анна & 1995 & 31 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 11.} Работа с временными интервалами. Из текущей даты вычитается интервал в пять лет, и выбираются соревнования, прошедшие в этот промежуток.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    id,
+    name,
+    event_date
+FROM competition
+WHERE event_date BETWEEN CURRENT_DATE - INTERVAL '5 years' AND CURRENT_DATE
+ORDER BY event_date DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 11}\label{tab:infun6}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{id} & \textbf{name} & \textbf{event\_\allowbreak date} \\ \hline
+11 & Кубок Поршня & 2023-06-15 \\ \hline
+12 & Гонка Чемпионов & 2022-09-03 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 12.} Вычитание дат. Разность двух значений типа \texttt{date} равна количеству дней между ними.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    name,
+    event_date,
+    CURRENT_DATE - event_date AS days_since_competition
+FROM competition
+WHERE event_date <= CURRENT_DATE
+ORDER BY event_date DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 12}\label{tab:infun7}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{name} & \textbf{event\_\allowbreak date} & \textbf{days\_\allowbreak since\_\allowbreak competition} \\ \hline
+Кубок Поршня & 2023-06-15 & 1230 \\ \hline
+Гонка Чемпионов & 2022-09-03 & 1515 \\ \hline
+Ралли Монте-Карло & 2021-01-24 & 2102 \\ \hline
+Ралли Финляндия & 2020-08-07 & 2272 \\ \hline
+Ралли Греция & 2019-06-02 & 2704 \\ \hline
+Ралли Уэльс & 2018-10-05 & 2944 \\ \hline
+Ралли Мичиган & 2017-07-14 & 3392 \\ \hline
+Ралли Испания & 2016-10-16 & 3663 \\ \hline
+Ралли Марокко & 2015-04-26 & 4202 \\ \hline
+Ралли Австралия & 2014-09-12 & 4428 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Подзапросы и предложение WITH}
+
+Результаты одного запроса можно использовать в другом. Подзапрос может возвращать одно значение (скалярный подзапрос), набор значений или использоваться для проверки существования строк. Общие табличные выражения (CTE), задаваемые в предложении \texttt{WITH}, позволяют дать подзапросу имя, вычислить его один раз и использовать результат в основном запросе.
+
+\textbf{Запрос 13.} Скалярный подзапрос в условии \texttt{WHERE}: сначала вычисляется средняя мощность автомобилей автопарка, затем выбираются автомобили с большей мощностью.
+
+\begin{minted}[breaklines]{sql}
+SELECT *
+FROM car
+WHERE horsepower > (SELECT AVG(horsepower) FROM car);
+\end{minted}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\caption{Результат запроса 13}\label{tab:cte1}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{21mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{14mm}|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{photo\_\allowbreak url} & \textbf{description} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} & \textbf{suspension\_\allowbreak name} & \textbf{is\_\allowbreak utilized} \\ \hline
+4 & Toyota Supra & \url{https://cars.pics/toyota_supra.jpg} & Мотор 2JZ, тюнинг без границ. Такую вы видели только на картинках! & 330 & 1997 & Оранжевый & Double Wishbone & false \\ \hline
+5 & Nissan Skyline GT-R & \url{https://cars.pics/nissan_skyline_gtr.jpg} & Его знает каждый. Столько игр и фильмов ему посвящено! & 280 & 1999 & Синий & Multi-Link & false \\ \hline
+7 & BMW M3 & \url{https://cars.pics/bmw_m3.jpg} & Рядная шестёрка, задний привод. Седан, а едет как спорткар. & 510 & 2021 & Серый & Adaptive M Suspension & false \\ \hline
+10 & Porsche 911 & \url{https://cars.pics/porsche_911.jpg} & Оппозитник сзади. Уже 60 лет не меняют форму кузова. Могут, а зачем?. & 450 & 2022 & Чёрный & Sport Suspension & false \\ \hline
+11 & Audi RS2 & \url{https://cars.pics/audi_rs2.jpg} & Универсал, который доводили сами инженеры из Porsche. Первый RS от Audi. & 315 & 1994 & Синий & Sport Suspension & false \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 14.} Коррелированный подзапрос с предикатом \texttt{NOT EXISTS}: выбираются тренеры, для которых в таблице \texttt{achievement} нет ни одной записи.
+
+\begin{minted}[breaklines]{sql}
+SELECT
+    t.id,
+    t.last_name,
+    t.first_name
+FROM trainer t
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM achievement a
+    WHERE a.trainer_id = t.id
+);
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 14}\label{tab:cte2}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{id} & \textbf{last\_\allowbreak name} & \textbf{first\_\allowbreak name} \\ \hline
+8 & Соколова & Анна \\ \hline
+\end{tabular}
+\end{table}
+
+Не имеет достижений в соревнованиях один тренер --- Соколова Анна.
+
+
+\textbf{Запрос 15.} Общее табличное выражение \texttt{trainer\_results} подсчитывает количество достижений каждого тренера. Далее результат соединяется с таблицей \texttt{trainer} для получения фамилий и имён.
+
+\begin{minted}[breaklines]{sql}
+WITH trainer_results AS (
+    SELECT
+        trainer_id,
+        COUNT(*) AS achievement_count
+    FROM achievement
+    GROUP BY trainer_id
+)
+SELECT
+    t.last_name,
+    t.first_name,
+    tr.achievement_count
+FROM trainer_results tr
+INNER JOIN trainer t ON t.id = tr.trainer_id
+ORDER BY tr.achievement_count DESC;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 15}\label{tab:cte3}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{last\_\allowbreak name} & \textbf{first\_\allowbreak name} & \textbf{achievement\_\allowbreak count} \\ \hline
+Моралес & Даниэль & 2 \\ \hline
+Пехота & Наталья & 2 \\ \hline
+Торрето & Доминик & 2 \\ \hline
+Иванова & Мария & 1 \\ \hline
+Иванов & Иван & 1 \\ \hline
+Смирнов & Алексей & 1 \\ \hline
+Петров & Дмитрий & 1 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Предложение RETURNING}
+
+Команды \texttt{INSERT}, \texttt{UPDATE} и \texttt{DELETE} могут возвращать затронутые строки с помощью предложения \texttt{RETURNING}. Для \texttt{UPDATE} возвращаются уже изменённые значения.
+
+\textbf{Запрос 16.} Добавление нового автомобиля. Предложение \texttt{RETURNING *} возвращает созданную запись целиком, в том числе автоматически сгенерированный идентификатор и значения по умолчанию.
+
+\begin{minted}[breaklines]{sql}
+INSERT INTO car (
+    title,
+    description,
+    horsepower,
+    production_year,
+    color,
+    suspension_name
+)
+VALUES (
+    'Volkswagen Beetle',
+    'Самый стильный автомобиль в клубе',
+    111,
+    1975,
+    'Красный',
+    'MacPherson'
+)
+RETURNING *;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\caption{Результат запроса 16}\label{tab:ret1}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{21mm}|>{\raggedright\arraybackslash}p{26mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{16mm}|>{\raggedright\arraybackslash}p{19mm}|>{\raggedright\arraybackslash}p{14mm}|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{photo\_\allowbreak url} & \textbf{description} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} & \textbf{suspension\_\allowbreak name} & \textbf{is\_\allowbreak utilized} \\ \hline
+15 & Volkswagen Beetle & null & Самый стильный автомобиль в клубе & 111 & 1975 & Красный & MacPherson & false \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 17.} Увеличение мощности автомобиля на 20 л.с. Возвращаются только изменённые значения выбранных столбцов.
+
+\begin{minted}[breaklines]{sql}
+UPDATE car
+SET horsepower = horsepower + 20
+WHERE id = 3
+RETURNING id, title, horsepower;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 17}\label{tab:ret2}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{horsepower} \\ \hline
+3 & Mazda MX-5 Miata & 221 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\textbf{Запрос 18.} Удаление специализации тренера Торрето на автомобиле Nissan Skyline GT-R. Идентификаторы тренера и автомобиля определяются подзапросами, удалённая строка возвращается в результате.
+
+\begin{minted}[breaklines]{sql}
+DELETE FROM trainer_car
+WHERE trainer_id IN (SELECT id FROM trainer WHERE last_name = 'Торрето')
+    AND car_id IN (SELECT id FROM car WHERE title = 'Nissan Skyline GT-R')
+RETURNING *;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+
+\caption{Результат запроса 18}\label{tab:ret3}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{trainer\_\allowbreak id} & \textbf{car\_\allowbreak id} \\ \hline
+1 & 5 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Планы выполнения запросов (EXPLAIN)}
+
+План выполнения запроса представляет собой дерево узлов, для каждого из которых выводятся оценка стоимости запуска и общая стоимость (\texttt{cost}), ожидаемое число строк (\texttt{rows}) и ширина строки (\texttt{width}). При использовании параметра \texttt{ANALYZE} запрос реально выполняется, и к оценкам добавляются фактическое время и число строк.
+
+\textbf{План 1.} Обычный \texttt{EXPLAIN} для поиска автомобиля по названию.
+
+\begin{minted}[breaklines]{sql}
+EXPLAIN
+SELECT *
+FROM car
+WHERE title = 'Mazda MX-5 Miata';
+\end{minted}
+
+\begin{Verbatim}[fontsize=\scriptsize,breaklines=true,breakanywhere=true]
+Index Scan using car_title_idx on car  (cost=0.14..8.16 rows=1 width=1059)
+Index Cond: ((title)::text = 'Mazda MX-5 Miata'::text)
+\end{Verbatim}
+
+
+По столбцу \texttt{title} создан индекс, поэтому планировщик выбрал метод доступа \textit{Index Scan} с условием поиска по индексу \texttt{car\_title\_idx}. Общая оценка стоимости составляет 8.16.
+
+
+\textbf{План 2.} \texttt{EXPLAIN (ANALYZE)} для запроса с \texttt{NOT EXISTS}. Помимо оценок выводится фактическое время выполнения.
+
+\begin{minted}[breaklines]{sql}
+EXPLAIN (ANALYSE)
+SELECT
+    t.id,
+    t.last_name,
+    t.first_name
+FROM trainer t
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM achievement a
+    WHERE a.trainer_id = t.id
+);
+\end{minted}
+
+\begin{Verbatim}[fontsize=\scriptsize,breaklines=true,breakanywhere=true]
+Nested Loop Anti Join  (cost=0.15..32.62 rows=30 width=444) (actual time=0.032..0.034 rows=1.00 loops=1)
+Buffers: shared hit=16
+->  Seq Scan on trainer t  (cost=0.00..10.60 rows=60 width=444) (actual time=0.014..0.015 rows=8.00 loops=1)
+Buffers: shared hit=1
+->  Index Only Scan using achievement_trainer_id_idx on achievement a  (cost=0.15..1.02 rows=4 width=8) (actual time=0.002..0.002 rows=0.88 loops=8)
+Index Cond: (trainer_id = t.id)
+Heap Fetches: 7
+Index Searches: 8
+Buffers: shared hit=15
+Planning Time: 0.111 ms
+Execution Time: 0.048 ms
+\end{Verbatim}
+
+
+Для соединения использован узел \textit{Nested Loop Anti Join}: таблица \texttt{trainer} читается последовательно (\textit{Seq Scan}), а для каждого тренера выполняется поиск в индексе \texttt{achievement\_trainer\_id\_idx} (\textit{Index Only Scan}). Время планирования составило 0.111 мс, время выполнения --- 0.048 мс. Оценка числа строк таблицы \texttt{trainer} (60) заметно отличается от фактической (8), что объясняется малым объёмом данных и отсутствием собранной статистики.
+
+
+\textbf{План 3.} \texttt{EXPLAIN (ANALYZE, BUFFERS)} с получением только столбца \texttt{title}. Поскольку этот столбец входит в индекс, применяется метод доступа \textit{Index Only Scan}.
+
+\begin{minted}[breaklines]{sql}
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT title
+FROM car
+WHERE title = 'Toyota Supra';
+\end{minted}
+
+\begin{Verbatim}[fontsize=\scriptsize,breaklines=true,breakanywhere=true]
+Index Only Scan using car_title_idx on car  (cost=0.14..8.16 rows=1 width=218) (actual time=0.022..0.022 rows=1.00 loops=1)
+Index Cond: (title = 'Toyota Supra'::text)
+Heap Fetches: 1
+Index Searches: 1
+Buffers: shared hit=2
+Planning Time: 0.054 ms
+Execution Time: 0.032 ms
+\end{Verbatim}
+
+
+Параметр \texttt{BUFFERS} добавил информацию об использовании буферов: \texttt{shared hit=2} означает, что оба нужных блока найдены в кеше, и чтения с диска не потребовалось. Значение \texttt{Heap Fetches: 1} показывает, что для найденной строки пришлось обратиться к таблице, так как страница ещё не отмечена в карте видимости (таблица недавно изменялась).
+
+
+\subsection{План запроса в формате JSON для нескольких связанных таблиц}
+
+\textbf{План 4.} Формат \texttt{JSON} содержит ту же информацию, что и текстовый, но удобнее для программной обработки. Выборка объединяет три связанные таблицы: \texttt{trainer}, \texttt{trainer\_car} и \texttt{car}.
+
+\begin{minted}[breaklines]{sql}
+EXPLAIN (ANALYSE, FORMAT JSON)
+SELECT
+    t.last_name,
+    t.first_name,
+    c.title AS car_title
+FROM trainer t
+JOIN trainer_car tc ON tc.trainer_id = t.id
+JOIN car c ON c.id = tc.car_id;
+\end{minted}
+
+Результат выполнения:
+
+\begin{Verbatim}[fontsize=\tiny,breaklines=true,breakanywhere=true]
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 22.92,
+      "Total Cost": 61.34,
+      "Plan Rows": 1850,
+      "Plan Width": 654,
+      "Actual Startup Time": 0.045,
+      "Actual Total Time": 0.051,
+      "Actual Rows": 17.00,
+      "Actual Loops": 1,
+      "Disabled": false,
+      "Inner Unique": true,
+      "Hash Cond": "(tc.car_id = c.id)",
+      "Shared Hit Blocks": 3,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0,
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 11.35,
+          "Total Cost": 44.81,
+          "Plan Rows": 1850,
+          "Plan Width": 444,
+          "Actual Startup Time": 0.019,
+          "Actual Total Time": 0.022,
+          "Actual Rows": 17.00,
+          "Actual Loops": 1,
+          "Disabled": false,
+          "Inner Unique": true,
+          "Hash Cond": "(tc.trainer_id = t.id)",
+          "Shared Hit Blocks": 2,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "trainer_car",
+              "Alias": "tc",
+              "Startup Cost": 0.00,
+              "Total Cost": 28.50,
+              "Plan Rows": 1850,
+              "Plan Width": 16,
+              "Actual Startup Time": 0.005,
+              "Actual Total Time": 0.006,
+              "Actual Rows": 17.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 10.60,
+              "Total Cost": 10.60,
+              "Plan Rows": 60,
+              "Plan Width": 444,
+              "Actual Startup Time": 0.008,
+              "Actual Total Time": 0.008,
+              "Actual Rows": 8.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Hash Buckets": 1024,
+              "Original Hash Buckets": 1024,
+              "Hash Batches": 1,
+              "Original Hash Batches": 1,
+              "Peak Memory Usage": 9,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "trainer",
+                  "Alias": "t",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 10.60,
+                  "Plan Rows": 60,
+                  "Plan Width": 444,
+                  "Actual Startup Time": 0.005,
+                  "Actual Total Time": 0.006,
+                  "Actual Rows": 8.00,
+                  "Actual Loops": 1,
+                  "Disabled": false,
+                  "Shared Hit Blocks": 1,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 10.70,
+          "Total Cost": 10.70,
+          "Plan Rows": 70,
+          "Plan Width": 226,
+          "Actual Startup Time": 0.019,
+          "Actual Total Time": 0.020,
+          "Actual Rows": 12.00,
+          "Actual Loops": 1,
+          "Disabled": false,
+          "Hash Buckets": 1024,
+          "Original Hash Buckets": 1024,
+          "Hash Batches": 1,
+          "Original Hash Batches": 1,
+          "Peak Memory Usage": 9,
+          "Shared Hit Blocks": 1,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "car",
+              "Alias": "c",
+              "Startup Cost": 0.00,
+              "Total Cost": 10.70,
+              "Plan Rows": 70,
+              "Plan Width": 226,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.015,
+              "Actual Rows": 12.00,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        }
+      ]
+    },
+    "Planning": {
+      "Shared Hit Blocks": 0,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 0.162,
+    "Triggers": [
+    ],
+    "Execution Time": 0.069
+  }
+]
+\end{Verbatim}
+
+
+Корневой узел плана --- \textit{Hash Join}, общая стоимость 61.34, фактическое время 0.051 мс. Внутри него расположен второй \textit{Hash Join}, соединяющий \texttt{trainer\_car} и \texttt{trainer}; все три таблицы читаются последовательно (\textit{Seq Scan}). В результате получено 17 строк, время планирования составило 0.162 мс, время выполнения --- 0.069 мс.
+
+
+\subsection{Способы соединения наборов строк}
+
+Для одной и той же выборки (тренеры и автомобили, на которых они специализируются) выполнено соединение тремя способами: вложенным циклом (\textit{Nested Loop}), хешированием (\textit{Hash Join}) и слиянием (\textit{Merge Join}). Нужный способ включается принудительно: параметрами \texttt{enable\_\allowbreak nestloop}, \texttt{enable\_\allowbreak hashjoin} и \texttt{enable\_\allowbreak mergejoin} отключаются остальные способы. Для каждого варианта получен план в формате \texttt{JSON} с параметром \texttt{ANALYZE}. Ниже приведено сокращённое представление плана (тип узла, стоимость, фактическое время и число строк) и основные показатели.
+
+\textbf{Вариант 1. Вложенный цикл.}
+
+\begin{minted}[breaklines]{sql}
+SET enable_nestloop = ON;
+SET enable_hashjoin = OFF;
+SET enable_mergejoin = OFF;
+
+EXPLAIN (ANALYZE, FORMAT JSON)
+SELECT
+    t.id,
+    t.last_name,
+    c.title
+FROM trainer t
+INNER JOIN trainer_car tc ON tc.trainer_id = t.id
+INNER JOIN car c ON c.id = tc.car_id;
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true]
+Nested Loop  (cost=0.29..425.70, actual time=0.037..0.077, rows=17)
+   -> Nested Loop  (cost=0.15..86.70, actual time=0.030..0.057, rows=17)
+      -> Seq Scan on car  (cost=0.00..10.70, actual time=0.014..0.015, rows=12)
+      -> Index Scan on trainer_car using trainer_car_car_id_idx  (cost=0.15..1.00, actual time=0.002..0.003, rows=1)
+   -> Index Scan on trainer using trainer_pkey  (cost=0.14..0.18, actual time=0.001..0.001, rows=1)
+\end{Verbatim}
+
+
+Из таблицы \texttt{car} (12 строк) выполняется последовательное чтение, а для каждой строки поиск соответствующих записей в \texttt{trainer\_car} и \texttt{trainer} выполняется по индексам \texttt{trainer\_car\_car\_id\_idx} и \texttt{trainer\_pkey}. Большое число обращений к индексам даёт самую высокую стоимость плана.
+
+
+\textbf{Вариант 2. Хеширование.}
+
+\begin{minted}[breaklines]{sql}
+SET enable_nestloop = OFF;
+SET enable_hashjoin = ON;
+SET enable_mergejoin = OFF;
+
+EXPLAIN (ANALYZE, FORMAT JSON)
+SELECT
+    t.id,
+    t.last_name,
+    c.title
+FROM trainer t
+JOIN trainer_car tc ON tc.trainer_id = t.id
+JOIN car c ON c.id = tc.car_id;
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true]
+Hash Join  (cost=22.92..61.34, actual time=0.053..0.061, rows=17)
+   -> Hash Join  (cost=11.35..44.81, actual time=0.022..0.026, rows=17)
+      -> Seq Scan on trainer_car  (cost=0.00..28.50, actual time=0.006..0.007, rows=17)
+      -> Hash  (cost=10.60..10.60, actual time=0.010..0.010, rows=8)
+         -> Seq Scan on trainer  (cost=0.00..10.60, actual time=0.006..0.007, rows=8)
+   -> Hash  (cost=10.70..10.70, actual time=0.023..0.024, rows=12)
+      -> Seq Scan on car  (cost=0.00..10.70, actual time=0.017..0.018, rows=12)
+\end{Verbatim}
+
+
+Меньшие наборы строк помещаются в хеш-таблицы, после чего большая таблица \texttt{trainer\_car} читается один раз последовательно. Подготовка хеш-таблиц дешёвая, так как таблицы небольшие.
+
+
+\textbf{Вариант 3. Слияние.}
+
+\begin{minted}[breaklines]{sql}
+SET enable_nestloop = OFF;
+SET enable_hashjoin = OFF;
+SET enable_mergejoin = ON;
+
+EXPLAIN (ANALYZE, FORMAT JSON)
+SELECT
+    t.id,
+    t.last_name,
+    c.title
+FROM trainer t
+JOIN trainer_car tc ON tc.trainer_id = t.id
+JOIN car c ON c.id = tc.car_id;
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true]
+Merge Join  (cost=211.99..228.07, actual time=0.051..0.055, rows=17)
+   -> Sort  (cost=199.14..203.77, actual time=0.041..0.042, rows=17)
+      -> Merge Join  (cost=12.52..98.75, actual time=0.030..0.037, rows=17)
+         -> Index Only Scan on trainer_car using trainer_car_pkey  (cost=0.15..75.90, actual time=0.011..0.015, rows=17)
+         -> Sort  (cost=12.37..12.52, actual time=0.016..0.016, rows=8)
+            -> Seq Scan on trainer  (cost=0.00..10.60, actual time=0.010..0.011, rows=8)
+   -> Sort  (cost=12.85..13.02, actual time=0.009..0.009, rows=11)
+      -> Seq Scan on car  (cost=0.00..10.70, actual time=0.005..0.005, rows=12)
+\end{Verbatim}
+
+
+Для слияния оба набора должны быть отсортированы по ключу соединения, поэтому в плане появились узлы \textit{Sort}, а общая стоимость выросла за счёт сортировки. Для таблицы \texttt{trainer\_car} использован \textit{Index Only Scan} по первичному ключу.
+
+
+Показатели трёх вариантов сведены в таблицу~\ref{tab:joins}: \textit{Actual Time} --- фактическое время корневого узла, \textit{Planning} и \textit{Execution} --- время планирования и выполнения запроса, \textit{Shared Hit} --- число блоков, найденных в разделяемом буфере.
+
+\begin{table}[H]\centering\footnotesize\caption{Сравнение способов соединения}\label{tab:joins}
+\begin{tabular}{|l|r|r|r|r|r|}\hline
+\textbf{Способ} & \textbf{Total Cost} & \textbf{Actual Time, мс} & \textbf{Planning, мс} & \textbf{Execution, мс} & \textbf{Shared Hit} \\ \hline
+Nested Loop & 425.70 & 0.077 & 0.181 & 0.101 & 59 \\ \hline
+Hash Join & 61.34 & 0.061 & 0.181 & 0.080 & 3 \\ \hline
+Merge Join & 228.07 & 0.055 & 0.159 & 0.079 & 4 \\ \hline
+\end{tabular}\end{table}
+
+
+Результаты показывают, что наименьшую оценку стоимости (61.34) имеет соединение хешированием, самую высокую (425.70) --- вложенный цикл. Время выполнения всех трёх вариантов составляет порядка 0.08--0.10 мс; на выборке из 17 строк разница между ними сопоставима с погрешностью измерения, при этом вложенный цикл оказался самым медленным и обратился к наибольшему числу буферов (59 против 3 у хеширования и 4 у слияния). Планировщик при включённых по умолчанию способах соединения сам выбрал \textit{Hash Join} (см. план 4). Таким образом, для данной выборки наиболее оптимальным способом является \textbf{соединение хешированием (Hash Join)}: оно имеет наименьшую стоимость и наименьшее число обращений к буферам, а время выполнения практически не отличается от лучшего (0.080 мс у хеширования и 0.079 мс у слияния). При росте объёмов данных это преимущество будет увеличиваться, так как хеширование читает каждую таблицу один раз, а вложенный цикл выполняет обращение к индексу для каждой строки внешнего набора.
+
+\section*{Вывод}
+
+В ходе выполнения лабораторной работы были освоены агрегатные функции с группировкой строк и фильтрацией групп (\texttt{GROUP BY}, \texttt{HAVING}), операторы и встроенные функции PostgreSQL, работа с датами и временными интервалами, подзапросы, общие табличные выражения и предложение \texttt{RETURNING}. Все примеры из методических указаний выполнены для базы данных гоночного автоклуба.
+
+Получены и проанализированы планы выполнения запросов с параметрами \texttt{ANALYZE} и \texttt{BUFFERS}, а также в формате \texttt{JSON} для выборки из нескольких связанных таблиц. Рассмотрены методы доступа \textit{Index Scan} и \textit{Index Only Scan}. Три способа соединения (\textit{Nested Loop}, \textit{Hash Join}, \textit{Merge Join}) сравнены на одной выборке; наиболее оптимальным признано соединение хешированием.
+
+\end{document}

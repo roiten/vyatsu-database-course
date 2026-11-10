@@ -1,0 +1,622 @@
+\documentclass[oneside,a4paper,14pt]{extarticle}
+
+\usepackage[T2A]{fontenc}
+\usepackage[top=20mm,bottom=20mm,left=30mm,right=10mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{indentfirst}
+\usepackage{caption}
+\usepackage[breaklinks,hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{minted,fancyvrb}
+\usepackage{float}
+\usepackage{array}
+\usepackage{url}
+\captionsetup{labelsep=endash,justification=centering}
+
+\setminted{style=rainbow_dash,fontsize=\small,breaklines}
+
+\titleformat{\section}
+{\normalsize\bfseries}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalsize\bfseries}
+{\thesubsection}{1em}{}
+
+\renewcommand\baselinestretch{1.33}\normalsize
+\setlength{\parindent}{1.25cm}
+\setlength{\emergencystretch}{3em}
+
+\begin{document}
+\newpage\thispagestyle{empty}
+
+\begin{center}
+МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ\\
+РОССИЙСКОЙ ФЕДЕРАЦИИ\\
+ФЕДЕРАЛЬНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ\\
+ОБРАЗОВАТЕЛЬНОЕ УЧРЕЖДЕНИЕ ВЫСШЕГО ОБРАЗОВАНИЯ\\
+«ВЯТСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ»\\
+Институт математики и информационных систем\\
+Факультет автоматики и вычислительной техники\\
+Кафедра электронных вычислительных машин
+\end{center}
+
+\vspace{30mm}
+
+\begin{center}
+Отчёт по лабораторной работе № 3\\
+по дисциплине\\
+«Управление данными»\\
+«Пользовательские функции. Процедурный язык PL/pgSQL»
+\end{center}
+
+\vspace{40mm}
+
+\noindent
+\begin{tabular}{l r}
+Выполнил студент гр. ИВТб-2303-06-00 \hspace{3mm}\rule[-1mm]{20mm}{0.15mm} /Перевозчиков Д.А./ \\
+
+Проверил \hspace{57mm}\rule[-1mm]{20mm}{0.15mm} /Клюкин В. Л./
+\end{tabular}
+
+\vfill
+\begin{center}
+Киров\\
+2026
+\end{center}
+
+
+\newpage\thispagestyle{empty}
+
+\section{Цели лабораторной работы}
+
+\begin{itemize}
+    \item познакомиться с созданием пользовательских функций и триггеров в PostgreSQL;
+    \item освоить работу с составными типами данных и массивами;
+    \item изучить основы процедурного языка PL/pgSQL.
+\end{itemize}
+
+\section{Задание}
+
+Для базы данных, созданной в лабораторных работах № 1 и № 2, требуется:
+
+\begin{enumerate}
+    \item для любой таблицы создать функцию \texttt{save\_имя\_таблицы}, которая выполняет \texttt{INSERT}, если переданный первичный ключ равен \texttt{NULL}, и \texttt{UPDATE} в противном случае, и возвращает первичный ключ обработанной строки;
+    \item для таблицы, на которую имеются внешние ключи, создать функцию \texttt{delete\_имя\_таблицы}, которая удаляет строку по первичному ключу, а при наличии ссылок на неё поднимает ошибку «Невозможно выполнить удаление, так как есть внешние ссылки»;
+    \item для таблицы с числовым столбцом создать функцию, возвращающую \texttt{SETOF} строк, в которых значение не меньше переданного аргумента;
+    \item создать составной тип из нескольких полей, хотя бы одно из которых числовое, и функцию, фильтрующую массив объектов этого типа по минимальному значению поля;
+    \item создать таблицу \texttt{log\_имя\_таблицы} для журнала изменений выбранного столбца и заполнять её триггером на вставку и изменение строк;
+    \item реализовать функцию, использующую динамически формируемый запрос.
+\end{enumerate}
+
+Все функции реализуются на PL/pgSQL. Работа выполняется на базе данных гоночного автоклуба (таблицы \texttt{car}, \texttt{trainer}, \texttt{trainer\_car}, \texttt{competition}, \texttt{achievement}) в PostgreSQL~16. Основным объектом заданий выбрана таблица автомобилей \texttt{car}: на неё ссылаются две таблицы, и она содержит числовые столбцы \texttt{horsepower} и \texttt{production\_year}. Состояние таблицы перед выполнением работы приведено в таблице~\ref{tab:car0}. Пропуск ключа 12 и три одинаковые строки Volkswagen Beetle (13--15) остались после повторных запусков запроса \texttt{INSERT} в лабораторной работе № 2.2.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Исходное содержимое таблицы car (основные столбцы)}\label{tab:car0}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} & \textbf{is\_\allowbreak utilized} \\ \hline
+1 & ВАЗ 2107 & 76 & 1995 & Белый & false \\ \hline
+2 & ОКА & 200 & 2000 & Красный & true \\ \hline
+3 & Mazda MX-5 Miata & 221 & 2022 & Красный & false \\ \hline
+4 & Toyota Supra & 330 & 1997 & Оранжевый & false \\ \hline
+5 & Nissan Skyline GT-R & 280 & 1999 & Синий & false \\ \hline
+6 & Mitsubishi Lancer Evolution & 180 & 2005 & Красный & false \\ \hline
+7 & BMW M3 & 510 & 2021 & Серый & false \\ \hline
+8 & Audi Quattro & 200 & 1984 & Оранжевый & false \\ \hline
+9 & Peugeot 406 & 194 & 1997 & Белый & false \\ \hline
+10 & Porsche 911 & 450 & 2022 & Чёрный & false \\ \hline
+11 & Audi RS2 & 315 & 1994 & Синий & false \\ \hline
+13 & Volkswagen Beetle & 111 & 1975 & Красный & false \\ \hline
+14 & Volkswagen Beetle & 111 & 1975 & Красный & false \\ \hline
+15 & Volkswagen Beetle & 111 & 1975 & Красный & false \\ \hline
+\end{tabular}
+\end{table}
+
+Запросы каждого задания сохранены в отдельном файле каталога \texttt{sql}: файл содержит создание объектов и проверочные запросы, которые приведены ниже по ходу описания.
+
+\newpage
+\section{Решение}
+
+\subsection{Функция save\_car}
+
+Код задания находится в файле \texttt{save\_car.sql}. Функция принимает значения всех столбцов таблицы \texttt{car}. Имена параметров оканчиваются символом подчёркивания, чтобы они не совпадали с именами столбцов внутри запросов. Параметру \texttt{is\_utilized\_} задано значение по умолчанию \texttt{FALSE}, как и одноимённому столбцу, поэтому при вызове его можно не указывать.
+
+Если \texttt{id\_} равен \texttt{NULL}, выполняется \texttt{INSERT}, и сгенерированный последовательностью ключ попадает в переменную \texttt{used\_id} через \texttt{RETURNING ... INTO}. Иначе выполняется \texttt{UPDATE}. В отличие от примера из методических указаний, где после обновления в переменную просто копируется переданный ключ, здесь он тоже берётся из \texttt{RETURNING}. Поэтому при обновлении несуществующей строки функция возвращает \texttt{NULL}, и вызывающий код может отличить успешное изменение от холостого.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION save_car(
+    id_ BIGINT,
+    title_ VARCHAR(100),
+    photo_url_ VARCHAR(255),
+    description_ TEXT,
+    horsepower_ INT,
+    production_year_ INT,
+    color_ VARCHAR(20),
+    suspension_name_ VARCHAR(100),
+    is_utilized_ BOOLEAN DEFAULT FALSE
+)
+RETURNS BIGINT
+AS $$
+DECLARE
+    used_id BIGINT;
+BEGIN
+    IF id_ IS NULL THEN
+        INSERT INTO car (title, photo_url, description, horsepower,
+                         production_year, color, suspension_name, is_utilized)
+        VALUES (title_, photo_url_, description_, horsepower_,
+                production_year_, color_, suspension_name_, is_utilized_)
+        RETURNING id INTO used_id;
+    ELSE
+        UPDATE car SET
+            title = title_,
+            photo_url = photo_url_,
+            description = description_,
+            horsepower = horsepower_,
+            production_year = production_year_,
+            color = color_,
+            suspension_name = suspension_name_,
+            is_utilized = is_utilized_
+        WHERE id = id_
+        RETURNING id INTO used_id; -- останется NULL, если строки с таким id нет
+    END IF;
+
+    RETURN used_id;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Функция проверена тремя вызовами: добавлением нового автомобиля, изменением описания и мощности автомобиля Peugeot 406 (id~=~9) и попыткой изменить строку с несуществующим ключом 999.
+
+\begin{minted}{postgresql}
+-- Проверка: вставка новой строки
+SELECT save_car(NULL, 'Subaru Impreza WRX STI', NULL,
+                'Оппозитный турбомотор и симметричный полный привод.',
+                300, 2006, 'Синий', 'MacPherson');
+
+-- Проверка: изменение существующей строки
+SELECT save_car(9, 'Peugeot 406', 'https://cars.pics/peugeot_406.jpg',
+                'Такси из Марселя. 3.0 V6 после доработки, подвеска от 605-й.',
+                220, 1997, 'Белый', 'Independent multi-link');
+
+-- Проверка: изменение несуществующей строки
+SELECT save_car(999, 'Lada Granta', NULL, NULL, 98, 2015, 'Серый', 'MacPherson');
+\end{minted}
+
+Вызовы вернули значения 16, 9 и \texttt{NULL} соответственно. Новая строка получила ключ 16, так как последовательность \texttt{car\_id\_seq} уже выдала значения до 15 включительно. Состояние затронутых строк показано в таблице~\ref{tab:save}: строка с id~=~16 добавлена, у строки с id~=~9 изменились описание и мощность (было 194 л.с.), а вызов с ключом 999 таблицу не изменил.
+
+\begin{minted}{postgresql}
+SELECT id, title, description, horsepower, production_year, color
+FROM car
+WHERE id IN (9, 16);
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Строки таблицы car после вызовов save\_car}\label{tab:save}
+\begin{tabular}{|l|>{\raggedright\arraybackslash}p{30mm}|>{\raggedright\arraybackslash}p{50mm}|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{description} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} \\ \hline
+16 & Subaru Impreza WRX STI & Оппозитный турбомотор и симметричный полный привод. & 300 & 2006 & Синий \\ \hline
+9 & Peugeot 406 & Такси из Марселя. 3.0 V6 после доработки, подвеска от 605-й. & 220 & 1997 & Белый \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Функция delete\_car}
+
+Код задания находится в файле \texttt{delete\_car.sql}. На таблицу \texttt{car} ссылаются две таблицы: \texttt{trainer} (любимый автомобиль тренера, \texttt{ON DELETE SET NULL}) и \texttt{trainer\_car} (автомобили, на которых тренер ведёт занятия, \texttt{ON DELETE CASCADE}). В методических указаниях ошибка формируется перехватом исключения \texttt{foreign\_key\_violation}, но в данной схеме это исключение не возникнет: при удалении автомобиля СУБД сама обнулит ссылку в \texttt{trainer} и удалит связанные строки \texttt{trainer\_car}. Поэтому наличие ссылок проверяется явно, предикатами \texttt{EXISTS}, до выполнения \texttt{DELETE}. Проверка по \texttt{trainer\_car} использует индекс \texttt{trainer\_car(car\_id)}, созданный в схеме; для столбца \texttt{trainer.favorite\_car\_id} при большом числе тренеров индекс стоит добавить.
+
+Ошибка поднимается с кодом \texttt{foreign\_key\_violation}, чтобы клиентское приложение обрабатывало её так же, как нарушение внешнего ключа, а в поле \texttt{DETAIL} передаётся id автомобиля.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION delete_car(
+    id_ BIGINT
+)
+RETURNS VOID
+AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM trainer WHERE favorite_car_id = id_)
+       OR EXISTS (SELECT 1 FROM trainer_car WHERE car_id = id_) THEN
+        RAISE EXCEPTION 'Невозможно выполнить удаление, так как есть внешние ссылки'
+            USING ERRCODE = 'foreign_key_violation',
+                  DETAIL = format('На автомобиль с id = %s ссылаются таблицы trainer или trainer_car', id_);
+    END IF;
+
+    DELETE FROM car WHERE id = id_;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Для проверки выбраны два автомобиля. Строка с id~=~15 --- один из дубликатов Volkswagen Beetle, она не закреплена ни за одним тренером, и её удаление заодно убирает лишнюю запись. Toyota Supra (id~=~4) указана в \texttt{trainer\_car} у тренеров Торрето и Смирнова.
+
+\begin{minted}{postgresql}
+-- Автомобиль 15 (дубликат Volkswagen Beetle) не закреплён ни за одним тренером
+SELECT delete_car(15);
+
+-- На автомобиль 4 (Toyota Supra) ссылается trainer_car
+SELECT delete_car(4);
+\end{minted}
+
+Первый вызов завершился без ошибок. Второй был прерван с сообщением:
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true]
+ERROR:  Невозможно выполнить удаление, так как есть внешние ссылки
+DETAIL:  На автомобиль с id = 4 ссылаются таблицы trainer или trainer_car
+CONTEXT:  PL/pgSQL function delete_car(bigint) line 5 at RAISE
+\end{Verbatim}
+
+Контрольный запрос возвращает одну строку --- \texttt{(4, Toyota Supra)}: автомобиль с id~=~15 удалён, автомобиль с id~=~4 остался в таблице вместе со ссылками на него.
+
+\begin{minted}{postgresql}
+SELECT id, title FROM car WHERE id IN (4, 15);
+\end{minted}
+
+\subsection{Функция фильтрации автомобилей по мощности}
+
+Код задания находится в файле \texttt{filter\_car\_by\_horsepower.sql}. Функция \texttt{filter\_car\_by\_horsepower} возвращает \texttt{SETOF car}, то есть множество строк той же структуры, что и таблица. Результат запроса передаётся вызывающему через \texttt{RETURN QUERY}. Строки упорядочены по убыванию мощности.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION filter_car_by_horsepower(
+    min_horsepower_ INT
+)
+RETURNS SETOF car
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT *
+        FROM car
+        WHERE horsepower >= min_horsepower_
+        ORDER BY horsepower DESC;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Функция, возвращающая множество строк, вызывается в предложении \texttt{FROM}, как таблица, поэтому из её результата можно выбирать отдельные столбцы:
+
+\begin{minted}{postgresql}
+SELECT id, title, horsepower, production_year, color
+FROM filter_car_by_horsepower(300);
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Результат filter\_car\_by\_horsepower(300)}\label{tab:filter}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{horsepower} & \textbf{production\_\allowbreak year} & \textbf{color} \\ \hline
+7 & BMW M3 & 510 & 2021 & Серый \\ \hline
+10 & Porsche 911 & 450 & 2022 & Чёрный \\ \hline
+4 & Toyota Supra & 330 & 1997 & Оранжевый \\ \hline
+11 & Audi RS2 & 315 & 1994 & Синий \\ \hline
+16 & Subaru Impreza WRX STI & 300 & 2006 & Синий \\ \hline
+\end{tabular}
+\end{table}
+
+В выборку вошли пять автомобилей, в том числе Subaru с мощностью ровно 300 л.с., так как используется нестрогое сравнение.
+
+\subsection{Составной тип t\_car\_brief и фильтрация массива}
+
+Код задания находится в файле \texttt{car\_brief\_array.sql}. Составной тип \texttt{t\_car\_brief} описывает краткую карточку автомобиля из четырёх полей, три из которых числовые. Типы полей совпадают с типами столбцов таблицы \texttt{car}, поэтому объекты типа можно получать прямо из таблицы.
+
+\begin{minted}{postgresql}
+CREATE TYPE t_car_brief AS (
+    id BIGINT,
+    title VARCHAR(100),
+    horsepower INT,
+    production_year INT
+);
+\end{minted}
+
+В методических указаниях массив фильтруется SQL-запросом через \texttt{unnest}. Здесь использован другой способ --- цикл \texttt{FOREACH} по элементам массива: элемент, удовлетворяющий условию, добавляется в результирующий массив функцией \texttt{array\_append}. Результат инициализирован пустым массивом \texttt{'\{\}'}, поэтому при отсутствии подходящих элементов функция возвращает пустой массив, а не \texttt{NULL}.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION filter_car_brief_array(
+    arr_ t_car_brief[],
+    min_horsepower_ INT
+)
+RETURNS t_car_brief[]
+AS $$
+DECLARE
+    item t_car_brief;
+    result t_car_brief[] := '{}';
+BEGIN
+    FOREACH item IN ARRAY arr_ LOOP
+        IF item.horsepower >= min_horsepower_ THEN
+            result := array_append(result, item);
+        END IF;
+    END LOOP;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Для проверки массив строится конструктором \texttt{ARRAY(подзапрос)} из японских автомобилей, отобранных регулярным выражением по названию: Mazda (221 л.с.), Toyota, Nissan, Mitsubishi (180 л.с.) и Subaru. Каждая строка приводится к типу \texttt{t\_car\_brief} оператором \texttt{::}. Минимальная мощность --- 250 л.с.
+
+\begin{minted}{postgresql}
+-- Массив формируется из автомобилей японского производства
+SELECT filter_car_brief_array(
+    ARRAY(
+        SELECT (id, title, horsepower, production_year)::t_car_brief
+        FROM car
+        WHERE title ~ '^(Toyota|Nissan|Mazda|Mitsubishi|Subaru)'
+        ORDER BY id
+    ),
+    250
+);
+\end{minted}
+
+Функция вернула массив из трёх объектов:
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true]
+{"(4,\"Toyota Supra\",330,1997)","(5,\"Nissan Skyline GT-R\",280,1999)","(16,\"Subaru Impreza WRX STI\",300,2006)"}
+\end{Verbatim}
+
+Mazda и Mitsubishi отброшены, так как их мощность ниже 250 л.с. Для удобного просмотра результат можно развернуть в таблицу функцией \texttt{unnest}, которая для массива составного типа возвращает отдельный столбец на каждое поле (таблица~\ref{tab:unnest}).
+
+\begin{minted}{postgresql}
+-- Развёртывание результата в таблицу для наглядности
+SELECT *
+FROM unnest(filter_car_brief_array(
+    ARRAY(
+        SELECT (id, title, horsepower, production_year)::t_car_brief
+        FROM car
+        WHERE title ~ '^(Toyota|Nissan|Mazda|Mitsubishi|Subaru)'
+        ORDER BY id
+    ),
+    250
+));
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Отфильтрованный массив, развёрнутый функцией unnest}\label{tab:unnest}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{horsepower} & \textbf{production\_\allowbreak year} \\ \hline
+4 & Toyota Supra & 330 & 1997 \\ \hline
+5 & Nissan Skyline GT-R & 280 & 1999 \\ \hline
+16 & Subaru Impreza WRX STI & 300 & 2006 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Журнал изменений мощности log\_car}
+
+Код задания находится в файле \texttt{log\_car.sql}. Журналируется столбец \texttt{horsepower}: мощность автомобиля меняется при доработках, и история этих изменений нужна для учёта. Таблица \texttt{log\_car} содержит первичный ключ, внешний ключ на автомобиль, момент изменения, старое и новое значение мощности. Старое значение допускает \texttt{NULL}, поскольку при вставке строки его нет. Внешний ключ объявлен с \texttt{ON DELETE CASCADE}: записи журнала не имеют смысла без автомобиля и удаляются вместе с ним.
+
+\begin{minted}{postgresql}
+CREATE TABLE IF NOT EXISTS log_car (
+    id BIGSERIAL PRIMARY KEY,
+    car_id BIGINT NOT NULL REFERENCES car(id) ON DELETE CASCADE,
+    change_datetime TIMESTAMP NOT NULL DEFAULT NOW(),
+    old_horsepower INT,
+    new_horsepower INT NOT NULL
+);
+\end{minted}
+
+Триггерная функция определяет вид операции по переменной \texttt{TG\_OP}. При \texttt{UPDATE} старое значение берётся из записи \texttt{OLD}; если мощность не изменилась (например, \texttt{UPDATE} присвоил столбцу то же значение), запись в журнал не добавляется. При \texttt{INSERT} старое значение равно \texttt{NULL}.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION log_car_horsepower()
+RETURNS TRIGGER
+AS $$
+DECLARE
+    old_val INT;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF OLD.horsepower = NEW.horsepower THEN
+            RETURN NEW; -- мощность не изменилась, запись в журнал не нужна
+        END IF;
+        old_val := OLD.horsepower;
+    ELSE
+        old_val := NULL;
+    END IF;
+
+    INSERT INTO log_car (car_id, old_horsepower, new_horsepower)
+    VALUES (NEW.id, old_val, NEW.horsepower);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Триггер срабатывает после операции (\texttt{AFTER}), так как в журнал должны попадать только фактически выполненные изменения. Указание \texttt{UPDATE OF horsepower} ограничивает срабатывание при обновлении командами, в которых этот столбец присутствует в списке \texttt{SET}; изменение других столбцов функцию не вызывает. Вместо устаревшей формы \texttt{EXECUTE PROCEDURE} использована \texttt{EXECUTE FUNCTION}, поддерживаемая с PostgreSQL~11.
+
+\begin{minted}{postgresql}
+CREATE TRIGGER log_car_horsepower_change
+AFTER INSERT OR UPDATE OF horsepower
+ON car
+FOR EACH ROW
+EXECUTE FUNCTION log_car_horsepower();
+\end{minted}
+
+Для проверки добавлен новый автомобиль, затем дважды изменена мощность (у нового автомобиля и у Mazda MX-5 Miata) и отдельно изменён цвет:
+
+\begin{minted}{postgresql}
+-- Проверка: вставка, два изменения мощности и изменение другого столбца
+INSERT INTO car (title, horsepower, production_year, color, suspension_name)
+VALUES ('Ford Focus RS', 350, 2016, 'Синий', 'MacPherson');
+
+UPDATE car SET horsepower = 375 WHERE title = 'Ford Focus RS';
+
+UPDATE car SET horsepower = horsepower + 30 WHERE id = 3;
+
+UPDATE car SET color = 'Голубой' WHERE title = 'Ford Focus RS';
+
+SELECT l.id, l.car_id, c.title, l.change_datetime,
+       l.old_horsepower, l.new_horsepower
+FROM log_car l
+JOIN car c ON c.id = l.car_id
+ORDER BY l.id;
+\end{minted}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Содержимое таблицы log\_car}\label{tab:log}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{car\_\allowbreak id} & \textbf{title} & \textbf{change\_\allowbreak datetime} & \textbf{old\_\allowbreak horsepower} & \textbf{new\_\allowbreak horsepower} \\ \hline
+1 & 17 & Ford Focus RS & 2026-11-11 00:59:14.490 & null & 350 \\ \hline
+2 & 17 & Ford Focus RS & 2026-11-11 00:59:14.491 & 350 & 375 \\ \hline
+3 & 3 & Mazda MX-5 Miata & 2026-11-11 00:59:14.492 & 221 & 251 \\ \hline
+\end{tabular}
+\end{table}
+
+Вставка зафиксирована записью без старого значения, оба изменения мощности --- записями со старым и новым значениями. Изменение цвета в журнал не попало, так как не затрагивает столбец \texttt{horsepower}.
+
+\subsection{Динамический поиск автомобилей}
+
+Код задания находится в файле \texttt{search\_car.sql}. Функция \texttt{search\_car} выполняет поиск по необязательным критериям: части названия, цвету, минимальной мощности и признаку исключения утилизированных автомобилей; дополнительно задаётся столбец сортировки. Текст запроса заранее неизвестен: в предложение \texttt{WHERE} попадают только условия для переданных параметров, поэтому запрос собирается в строковой переменной и выполняется командой \texttt{RETURN QUERY EXECUTE}.
+
+Значения параметров не вставляются в текст запроса, а передаются через \texttt{USING} и подставляются вместо \texttt{\$1}, \texttt{\$2}, \texttt{\$3}. Это исключает SQL-инъекцию через значения и избавляет от экранирования кавычек. Имя столбца сортировки нельзя передать параметром, поэтому оно сначала сверяется со списком допустимых столбцов, а затем подставляется функцией \texttt{format} со спецификатором \texttt{\%I}, который оформляет строку как идентификатор. Если сортировка выполняется не по ключу, к ней добавляется \texttt{id}: в таблице есть строки с одинаковым годом выпуска и мощностью, и без этого их порядок не определён. Сформированный запрос выводится через \texttt{RAISE NOTICE}, чтобы при проверке было видно, какой текст выполняется.
+
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION search_car(
+    title_ VARCHAR DEFAULT NULL,
+    color_ VARCHAR DEFAULT NULL,
+    min_horsepower_ INT DEFAULT NULL,
+    only_active_ BOOLEAN DEFAULT TRUE,
+    order_by_ TEXT DEFAULT 'id'
+)
+RETURNS SETOF car
+AS $$
+DECLARE
+    query TEXT := 'SELECT * FROM car WHERE TRUE';
+BEGIN
+    IF title_ IS NOT NULL THEN
+        query := query || ' AND title ILIKE ''%'' || $1 || ''%''';
+    END IF;
+    IF color_ IS NOT NULL THEN
+        query := query || ' AND color = $2';
+    END IF;
+    IF min_horsepower_ IS NOT NULL THEN
+        query := query || ' AND horsepower >= $3';
+    END IF;
+    IF only_active_ THEN
+        query := query || ' AND NOT is_utilized';
+    END IF;
+
+    IF order_by_ NOT IN ('id', 'title', 'horsepower', 'production_year') THEN
+        RAISE EXCEPTION 'Недопустимый столбец для сортировки: %', order_by_;
+    END IF;
+    query := query || format(' ORDER BY %I', order_by_);
+    IF order_by_ <> 'id' THEN
+        query := query || ', id'; -- однозначный порядок строк с равными значениями
+    END IF;
+
+    RAISE NOTICE '%', query;
+
+    RETURN QUERY EXECUTE query USING title_, color_, min_horsepower_;
+END;
+$$ LANGUAGE plpgsql;
+\end{minted}
+
+Начальное условие \texttt{WHERE TRUE} позволяет присоединять любое условие через \texttt{AND}, не проверяя, первое ли оно. Все параметры имеют значения по умолчанию, поэтому при вызове указываются только нужные, по именам (нотация \texttt{=>}).
+
+\textbf{Вызов 1.} Синие автомобили, отсортированные по мощности.
+
+\begin{minted}{postgresql}
+-- Синие автомобили, отсортированные по мощности
+SELECT id, title, color, horsepower
+FROM search_car(color_ => 'Синий', order_by_ => 'horsepower');
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true]
+NOTICE:  SELECT * FROM car WHERE TRUE AND color = $2 AND NOT is_utilized ORDER BY horsepower, id
+\end{Verbatim}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Результат вызова 1}\label{tab:dyn1}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{color} & \textbf{horsepower} \\ \hline
+5 & Nissan Skyline GT-R & Синий & 280 \\ \hline
+16 & Subaru Impreza WRX STI & Синий & 300 \\ \hline
+11 & Audi RS2 & Синий & 315 \\ \hline
+\end{tabular}
+\end{table}
+
+\textbf{Вызов 2.} Автомобили, в названии которых есть «audi» (без учёта регистра), мощностью от 250 л.с.
+
+\begin{minted}{postgresql}
+-- Автомобили Audi мощностью от 250 л.с.
+SELECT id, title, color, horsepower
+FROM search_car(title_ => 'audi', min_horsepower_ => 250);
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true]
+NOTICE:  SELECT * FROM car WHERE TRUE AND title ILIKE '%' || $1 || '%' AND horsepower >= $3 AND NOT is_utilized ORDER BY id
+\end{Verbatim}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Результат вызова 2}\label{tab:dyn2}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{color} & \textbf{horsepower} \\ \hline
+11 & Audi RS2 & Синий & 315 \\ \hline
+\end{tabular}
+\end{table}
+
+Audi Quattro (200 л.с.) отсеяна условием на мощность.
+
+\textbf{Вызов 3.} Все автомобили, включая утилизированные, по году выпуска.
+
+\begin{minted}{postgresql}
+-- Все автомобили, включая утилизированные, по году выпуска
+SELECT id, title, production_year, is_utilized
+FROM search_car(only_active_ => FALSE, order_by_ => 'production_year');
+\end{minted}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true]
+NOTICE:  SELECT * FROM car WHERE TRUE ORDER BY production_year, id
+\end{Verbatim}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Результат вызова 3}\label{tab:dyn3}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{id} & \textbf{title} & \textbf{production\_\allowbreak year} & \textbf{is\_\allowbreak utilized} \\ \hline
+13 & Volkswagen Beetle & 1975 & false \\ \hline
+14 & Volkswagen Beetle & 1975 & false \\ \hline
+8 & Audi Quattro & 1984 & false \\ \hline
+11 & Audi RS2 & 1994 & false \\ \hline
+1 & ВАЗ 2107 & 1995 & false \\ \hline
+4 & Toyota Supra & 1997 & false \\ \hline
+9 & Peugeot 406 & 1997 & false \\ \hline
+5 & Nissan Skyline GT-R & 1999 & false \\ \hline
+2 & ОКА & 2000 & true \\ \hline
+6 & Mitsubishi Lancer Evolution & 2005 & false \\ \hline
+16 & Subaru Impreza WRX STI & 2006 & false \\ \hline
+17 & Ford Focus RS & 2016 & false \\ \hline
+7 & BMW M3 & 2021 & false \\ \hline
+3 & Mazda MX-5 Miata & 2022 & false \\ \hline
+10 & Porsche 911 & 2022 & false \\ \hline
+\end{tabular}
+\end{table}
+
+Ни один фильтр не задан, поэтому запрос состоит только из начального условия и сортировки. В результат попала утилизированная ОКА, а строка 15, удалённая в задании 2, отсутствует. Автомобили одного года (Toyota Supra и Peugeot 406, Mazda MX-5 Miata и Porsche 911) упорядочены по ключу.
+
+\newpage
+\section*{Вывод}
+
+В ходе лабораторной работы были реализованы пользовательские функции для таблицы \texttt{car} базы данных гоночного автоклуба, триггеры для автоматического логирования изменений, а также функция для выполнения динамических SQL-запросов.
+
+Получены и закреплены практические навыки проектирования бизнес-логики на процедурном языке PL/pgSQL, работе с исключениями и управления целостностью базы данных. 
+
+
+\end{document}
